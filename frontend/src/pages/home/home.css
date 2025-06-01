@@ -1,0 +1,866 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background-color: #1e1e1e;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+.window {
+    width: 100vw;
+    min-height: 100vh;
+    margin: 0;
+    padding-bottom: 30px;
+    background-color: #2c2c2c;
+    box-shadow: none;
+    border-radius: 0;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.window-header {
+    background-color: #2c2c2c;
+    padding: 5px 10px;
+    border-bottom: 1px solid #444;
+    display: flex;
+    justify-content: space-between;
+    color: white;
+}
+
+.window-title {
+    font-size: 14px;
+}
+
+.close-btn {
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.top-bar {
+    background-color: #008080;
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+}
+
+.logo {
+    width: 60px;
+    height: 60px;
+}
+
+.brand {
+    margin-left: 10px;
+}
+
+.brand h1 {
+    font-size: 22px;
+    margin: 0;
+}
+
+.main-title {
+    font-size: 28px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.website {
+    font-size: 14px;
+    text-align: center;
+}
+
+.user-info {
+    text-align: right;
+    min-width: 220px;
+}
+
+.user-greeting, .date {
+    font-size: 14px;
+}
+
+.icon-button {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+    margin-left: 10px;
+}
+
+.smile-icon {
+    font-size: 28px;
+    margin-left: 5px;
+}
+
+.main-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px;
+}
+
+.left-column,
+.center-column,
+.right-column {
+    flex: 1;
+    min-width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.section {
+    padding: 10px;
+    position: relative;
+}
+
+.section-header {
+    padding: 10px;
+    color: white;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    border-left: 6px solid #008080;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* COLORES POR SECCIÓN */
+.limpieza .section-header { background-color: #007d7d; }
+.ocupacion .section-header { background-color: #009999; }
+.disponibilidad .section-header { background-color: #00b3b3; }
+
+.mantenimiento .section-header {
+    background-color: #fbc02d;
+    color: #333;
+    border-left: 6px solid #f57f17;
+}
+
+.reservaciones .section-header {
+    background-color: #ff9800;
+    color: white;
+    border-left: 6px solid #e65100;
+}
+
+.section-content {
+    border: 1px solid #ddd;
+    background-color: #fdfdfd;
+    padding: 10px;
+    border-radius: 5px;
+    overflow-y: auto;
+    max-height: 500px;
+    min-height: 200px;
+}
+
+.section-content::-webkit-scrollbar {
+    width: 10px;
+}
+.section-content::-webkit-scrollbar-thumb {
+    background-color: #008080;
+    border-radius: 5px;
+}
+.section-content::-webkit-scrollbar-track {
+    background-color: #ddd;
+}
+
+.room-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 5px;
+}
+
+.room-number {
+    font-size: 24px;
+    font-weight: bold;
+    width: 40px;
+    text-align: center;
+}
+
+.room-time {
+    margin-left: 20px;
+    color: #666;
+}
+
+.liberar-btn {
+    background-color: #008080;
+    color: white;
+    border: none;
+    padding: 5px 15px;
+    border-radius: 15px;
+    cursor: pointer;
+    margin-left: auto;
+}
+
+.liberar-btn.yellow {
+    background-color: #fbc02d;
+    color: #212121;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.occupation-card {
+    background-color: white;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.occupation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+}
+
+.room-big-number {
+    font-size: 36px;
+    font-weight: bold;
+    color: #008080;
+}
+
+.room-info {
+    text-align: center;
+}
+
+.room-type {
+    font-weight: 600;
+    color: #000;
+}
+
+.car-type {
+    font-size: 12px;
+    color: #666;
+}
+
+.time-remaining {
+    text-align: right;
+}
+
+.time-label {
+    font-size: 12px;
+    color: #666;
+}
+
+.time-value {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.check-times {
+    display: flex;
+    justify-content: space-between;
+    background-color: #eaeaea;
+    padding: 5px 10px;
+}
+
+.action-buttons {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px;
+}
+
+.action-btn {
+    background-color: #008080;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.action-btn.ticket {
+    background-color: #e0e0e0;
+    color: black;
+}
+
+.count-badge {
+    background-color: white;
+    color: #008080;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    margin-left: 5px;
+    font-weight: bold;
+}
+
+.tool-icon {
+    margin-right: 5px;
+}
+
+.mapa-link {
+    color: white;
+    text-decoration: none;
+    margin-left: 10px;
+}
+
+.room-count {
+    background-color: #008080;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+.reservation-item {
+    border-bottom: 1px solid #eee;
+    padding: 10px 0;
+}
+
+.reservation-number {
+    font-size: 24px;
+    font-weight: bold;
+    margin-right: 20px;
+}
+
+.reservation-details {
+    font-size: 12px;
+    color: #333;
+    margin-top: 5px;
+    font-weight: 600;
+}
+
+.add-icon {
+    font-size: 24px;
+    background-color: #ff9800;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    border: 2px solid white;
+    font-weight: bold;
+}
+.ocupacion .section-content {
+    height: calc(230px * 2 + 20px); /* 2 secciones pequeñas + espacio */
+    max-height: none;
+}
+.modal {
+  background-color: white;
+  padding: 20px;
+  border-radius: 12px;
+  width: 450px; /* aumentado */
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.3s ease;
+}
+
+.modal h3 {
+  margin-bottom: 10px;
+  font-size: 20px;
+  color: #222;
+}
+
+.modal ul {
+  padding-left: 0;
+  list-style: none;
+  margin-bottom: 15px;
+}
+
+.modal li {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.modal li:hover {
+  background-color: #f0f0f0;
+}
+
+.modal .close-btn {
+  background-color: #d9534f;
+  color: white;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.modal .cabinas-list {
+  margin-top: 20px;
+}
+
+.modal .cabinas-list h4 {
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.modal .cabina {
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.modal .cabina:hover {
+  background-color: #e0f7f7;
+}
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  text-align: left;
+}
+
+.modal h3 {
+  margin-bottom: 15px;
+}
+
+.modal ul {
+  list-style: none;
+  padding: 0;
+}
+
+.modal ul li {
+  background: #f1f1f1;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.modal ul li:hover {
+  background-color: #e0f7fa;
+}
+
+.cabinas-list {
+  margin-top: 20px;
+}
+
+.cabina {
+  background: #e0e0e0;
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cabina:hover {
+  background-color: #b2dfdb;
+}
+
+.modal .close-btn {
+  background: #e74c3c;
+  border: none;
+  padding: 10px 20px;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+.modal .close-btn:hover {
+  background: #c0392b;
+}
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  border-radius: 10px;
+  padding: 25px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.modal h3 {
+  margin-bottom: 15px;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.modal form label {
+  display: block;
+  margin: 10px 0 5px;
+  font-weight: 600;
+}
+
+.modal form input,
+.modal form select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.btn-pago,
+.btn-asignar {
+  padding: 8px 15px;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-pago {
+  background-color: #2196F3;
+  color: white;
+}
+
+.btn-asignar {
+  background-color: #4CAF50;
+  color: white;
+}
+.resumen-asignacion {
+  background-color: #f7f7f7;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: inset 0 0 5px #ccc;
+  margin-top: 20px;
+}
+
+.resumen-asignacion label {
+  font-weight: 600;
+  display: block;
+  margin-top: 10px;
+}
+
+.resumen-asignacion input,
+.resumen-asignacion select {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+/* ============================================================
+   OVERLAY + MODAL (para que el Home se vea detrás bajo un tintado)
+   ============================================================ */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  /* Baja la opacidad para que el Home siga visible bajo el overlay */
+  background: rgba(0, 0, 0, 0.25);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Asegúrate de que esté por encima de todo */
+}
+
+/* Caja principal del modal blanco */
+.modal {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px 25px;
+  width: 800px;
+  max-width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+/* Título del modal */
+.modal h3 {
+  font-size: 22px;
+  font-weight: bold;
+  color: #222;
+  margin-bottom: 15px;
+}
+
+/* Footer del modal: botones “Volver” y “Cerrar” */
+.modal-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+/* Botón “Volver” (rojo/anaranjado) */
+.btn-volver {
+  background-color: #e74c3c;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-volver:hover {
+  background-color: #c0392b;
+}
+
+/* Botón “Cerrar” (gris oscuro) */
+.btn-cerrar {
+  background-color: #333;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-cerrar:hover {
+  background-color: #111;
+}
+
+/* ======================================================
+   “PASO 2” DEL MODAL: LAYOUT DE DOS COLUMNAS
+   ====================================================== */
+.modal-body-dos-columnas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* Columna izquierda: Resumen + Formulario */
+.columna-izq {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.resumen-izq {
+  background-color: #f7f7f7;
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.15);
+  font-size: 14px;
+  color: #333;
+}
+
+.resumen-izq p {
+  margin-bottom: 6px;
+}
+
+/* Formulario en columna izquierda */
+.form-izq label {
+  font-weight: 600;
+  margin-bottom: 4px;
+  display: block;
+  color: #555;
+}
+
+.form-izq input,
+.form-izq select {
+  width: 100%;
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.checkbox-factura {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.checkbox-factura label {
+  font-weight: 500;
+  font-size: 14px;
+  color: #555;
+}
+
+/* Columna derecha: Desglose de montos y sección de pagos */
+.columna-der {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.resumen-der {
+  background-color: #fdfdfd;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 14px;
+  color: #333;
+}
+
+.fila-resumen {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.fila-resumen span {
+  display: inline-block;
+}
+
+.total-final {
+  font-weight: bold;
+  font-size: 16px;
+  margin-top: 8px;
+  border-top: 1px solid #ccc;
+  padding-top: 6px;
+}
+
+/* Sección de “Forma de Pago” en columna derecha */
+.seccion-pagos {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.seccion-pagos h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #222;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 4px;
+}
+
+.lista-pagos {
+  background: #fafafa;
+  border: 1px dashed #bbb;
+  border-radius: 6px;
+  padding: 10px;
+  min-height: 80px;
+  font-size: 13px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-realizar-pago {
+  background-color: #2196f3;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-realizar-pago:hover {
+  background-color: #1976d2;
+}
+
+.info-pago-restante {
+  font-size: 14px;
+  color: #222;
+}
+
+.btn-asignar-final {
+  background-color: #4caf50;
+  color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-asignar-final:hover {
+  background-color: #388e3c;
+}
+
+/* ======================================================
+   “PASO 1” DEL MODAL: Lista de duraciones y cabinas
+   ====================================================== */
+.lista-duraciones {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 15px;
+}
+
+.lista-duraciones li {
+  background-color: #f1f1f1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 15px;
+  color: #333;
+}
+
+.lista-duraciones li:hover {
+  background-color: #e0f7f7;
+}
+
+.cabinas-list {
+  margin-top: 15px;
+}
+
+.cabina-item {
+  background: #e0e0e0;
+  margin-bottom: 8px;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 15px;
+}
+
+.cabina-item:hover {
+  background-color: #b2dfdb;
+}

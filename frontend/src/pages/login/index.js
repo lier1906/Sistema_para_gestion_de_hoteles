@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import './login.css';
+import { useNavigate } from 'react-router-dom';
+
 
 function Login() {
+  const navigate = useNavigate();
+
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [mensaje, setMensaje] = useState('');
@@ -17,7 +21,9 @@ function Login() {
       .then(res => res.json())
       .then(data => {
         if (data.autenticado) {
-          setMensaje('✅ Bienvenido ' + data.usuario.nombre_completo);
+  localStorage.setItem('usuario', JSON.stringify(data.usuario)); // guarda los datos
+  navigate('/home'); // 🔁 redirige al Home automáticamente
+
           // Aquí podrías redirigir o guardar en localStorage si querés
         } else {
           setMensaje('❌ Credenciales incorrectas');

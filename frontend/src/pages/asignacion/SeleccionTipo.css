@@ -1,0 +1,40 @@
+.seleccion-container {
+  text-align: center;
+  padding: 40px;
+  color: white;
+}
+
+.tarjetas {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-top: 30px;
+  flex-wrap: wrap;
+}
+
+.tarjeta {
+  background-color: #004d4d;
+  padding: 30px;
+  border-radius: 15px;
+  width: 250px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.tarjeta:hover {
+  transform: scale(1.05);
+}
+
+.tarjeta h3 {
+  margin-bottom: 10px;
+  font-size: 20px;
+}
+
+.tarjeta.sencilla {
+  background-color: #007d7d;
+}
+
+.tarjeta.vip {
+  background-color: #e65100;
+}
