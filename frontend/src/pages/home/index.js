@@ -6,75 +6,93 @@ function Home() {
   // Tus estados originales
   // =========================
   const [cabinasDisponibles, setCabinasDisponibles] = useState([]);
-  
-  // === ESTADOS AGREGADOS para el Modal ===
-  const [modalVisible, setModalVisible] = useState(false);          // *** AGREGADO ***
-  const [modalPaso, setModalPaso] = useState(1);                      // *** AGREGADO ***
-  const [modalTipo, setModalTipo] = useState('');                     // *** AGREGADO ***
-  const [modalPrecios, setModalPrecios] = useState([]);               // *** AGREGADO ***
-  const [seleccion, setSeleccion] = useState(null);                   // *** AGREGADO ***
-  const [cabinas, setCabinas] = useState([]);                         // *** AGREGADO ***
-  const [cargandoCabinas, setCargandoCabinas] = useState(false);     // *** AGREGADO ***
 
+  // === ESTADOS AGREGADOS para el Modal y Pagos ===
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalPaso, setModalPaso] = useState(1);
+  const [modalTipo, setModalTipo] = useState('');
+  const [modalPrecios, setModalPrecios] = useState([]);
+  const [seleccion, setSeleccion] = useState(null);
+  const [cabinas, setCabinas] = useState([]);
+  const [cargandoCabinas, setCargandoCabinas] = useState(false);
+
+  // Tabla de Estancia y Cliente (ya estaba en tu código original)
   const [formData, setFormData] = useState({
     placa: '',
     personas: '',
     descuento: ''
   });
 
+  // === ESTADOS PARA PAGOS ===
+  const [idEstancia, setIdEstancia] = useState(null);
+  const [pagos, setPagos] = useState([]);
+  const [miniModalPago, setMiniModalPago] = useState(false);
+  const [pagoFormulario, setPagoFormulario] = useState({
+    metodo: 'EFECTIVO',
+    monto: ''
+  });
+
   // ===============================
-  // useEffect: cargar disponibilidad
+  // useEffect: cargar disponibilidad inicial
   // ===============================
   useEffect(() => {
     fetch('http://localhost:5000/api/cabinas-disponibles')
-      .then(res => res.json())
-      .then(data => setCabinasDisponibles(data))
-      .catch(err => console.error('Error al obtener disponibilidad', err));
+      .then((res) => res.json())
+      .then((data) => setCabinasDisponibles(data))
+      .catch((err) => console.error('Error al obtener disponibilidad', err));
   }, []);
 
   // ============================
   // Función para abrir el modal
   // ============================
   const abrirModal = (tipo) => {
-    setModalTipo(tipo);              // guardo “SENCILLA” o “VIP”
-    setSeleccion(null);              // reseteo selecciones previas
-    setCabinas([]);                  // vacío lista de cabinas
-    setModalPaso(1);                 // empiezo en el Paso 1 del modal
-    setModalVisible(true);           // muestro el overlay + modal
+    setModalTipo(tipo);
+    setSeleccion(null);
+    setCabinas([]);
+    setModalPaso(1);
+    setModalVisible(true);
+
     // Cargo las duraciones/ precios para ese tipo:
     fetch(`http://localhost:5000/api/precios/${tipo}`)
-      .then(res => res.json())
-      .then(data => setModalPrecios(data))
-      .catch(err => console.error('Error al obtener precios', err));
+      .then((res) => res.json())
+      .then((data) => setModalPrecios(data))
+      .catch((err) => console.error('Error al obtener precios', err));
   };
 
   // ===============================
-  // Función para cerrar (dismiss) el modal
+  // Función para cerrar (dismiss) el modal completo
   // ===============================
   const cerrarModal = () => {
-    setModalVisible(false);          // oculta modal completamente
-    setModalTipo('');                
-    setModalPrecios([]);             
-    setCabinas([]);                  
-    setSeleccion(null);              
+    setModalVisible(false);
+    setModalTipo('');
+    setModalPrecios([]);
+    setCabinas([]);
+    setSeleccion(null);
     setFormData({ placa: '', personas: '', descuento: '' });
     setCargandoCabinas(false);
+
+    // También cerremos el mini‐modal de pago si estuviera abierto
+    setMiniModalPago(false);
+    setPagoFormulario({ metodo: 'EFECTIVO', monto: '' });
+    setPagos([]);
+    setIdEstancia(null);
   };
 
   // ===================================================
-  // Función auxiliar: el usuario eligió una duración (p ej. 4 hrs)
+  // Función auxiliar: el usuario eligió una duración
   // ===================================================
-  const elegirDuracion = (precioObj) => {    // precioObj = { duracion_horas: x, precio: y }
+  const elegirDuracion = (precioObj) => {
     setSeleccion(precioObj);
     setCargandoCabinas(true);
-    // Tras haber seleccionado duración, cargo cabinas disponibles de ese tipo:
+
+    // Tras seleccionar duración, cargo cabinas disponibles de ese tipo:
     fetch(`http://localhost:5000/api/cabinas-por-tipo/${modalTipo}`)
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         setCabinas(data);
         setCargandoCabinas(false);
       })
-      .catch(err => {
+      .catch((err) => {
         console.error('Error al obtener cabinas', err);
         setCargandoCabinas(false);
       });
@@ -84,16 +102,16 @@ function Home() {
   // Función auxiliar: el usuario eligió un número de cabina
   // ===================================================
   const elegirCabina = (numeroCabina) => {
-    // agrego el número de cabina a “seleccion” y paso al Paso 2
-    setSeleccion(prev => ({ ...prev, cabina: numeroCabina }));
+    setSeleccion((prev) => ({ ...prev, cabina: numeroCabina }));
     setModalPaso(2);
   };
 
   // ===============================================
   // Al enviar el formulario final (Asignación)
   // ===============================================
-  const handleSubmit = (e) => {
+  const handleSubmitAsignacion = (e) => {
     e.preventDefault();
+
     const data = {
       cabina: seleccion?.cabina,
       tipo: modalTipo,
@@ -107,22 +125,91 @@ function Home() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     })
-      .then(res => res.json())
-      .then(response => {
+      .then((res) => res.json())
+      .then((response) => {
         alert('🏷️ Cabina asignada con éxito');
 
-        // *** AGREGADO: recargo la disponibilidad tras asignar ***
-        fetch('http://localhost:5000/api/cabinas-disponibles')
-          .then(res => res.json())
-          .then(data => setCabinasDisponibles(data))
-          .catch(err => console.error(err));
+        // Guardamos el id_estancia que devuelve el backend
+        const nuevoId = response.id_estancia;
+        setIdEstancia(nuevoId);
 
-        cerrarModal();
+        // Cargamos los pagos (aún no hay ninguno)
+        cargarPagosDeEstancia(nuevoId);
+
+        // Recargamos la disponibilidad de cabinas
+        fetch('http://localhost:5000/api/cabinas-disponibles')
+          .then((res) => res.json())
+          .then((disp) => setCabinasDisponibles(disp))
+          .catch((err) => console.error(err));
+
+        // Abrimos el mini‐modal para realizar el primer pago
+        setMiniModalPago(true);
       })
-      .catch(err => {
+      .catch((err) => {
         console.error('Error al asignar cabina', err);
         alert('🚨 Error al asignar la cabina');
       });
+  };
+
+  // ===============================================
+  // Función para cargar los pagos actuales de una estancia
+  // ===============================================
+  const cargarPagosDeEstancia = (id_est) => {
+    fetch(`http://localhost:5000/api/pagos/${id_est}`)
+      .then((res) => res.json())
+      .then((data) => setPagos(data))
+      .catch((err) => console.error('Error al obtener pagos', err));
+  };
+
+  // ===============================================
+  // Función para registrar un pago (POST /api/registrar-pago)
+  // ===============================================
+  const handleRegistrarPago = () => {
+    if (!idEstancia) {
+      alert('Primero debes asignar la habitación para registrar un pago.');
+      return;
+    }
+    if (!pagoFormulario.monto || Number(pagoFormulario.monto) <= 0) {
+      alert('Ingresa un monto válido.');
+      return;
+    }
+
+    const payload = {
+      id_estancia: idEstancia,
+      metodo_pago: pagoFormulario.metodo,
+      monto_pagado: parseFloat(pagoFormulario.monto)
+    };
+
+    fetch('http://localhost:5000/api/registrar-pago', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then((res) => res.json())
+      .then((resp) => {
+        alert('Pago registrado correctamente');
+
+        // Recargamos la lista de pagos para actualizar “Pago Restante”
+        cargarPagosDeEstancia(idEstancia);
+
+        // Cerramos el mini‐modal y limpiamos el formulario
+        setMiniModalPago(false);
+        setPagoFormulario({ metodo: 'EFECTIVO', monto: '' });
+      })
+      .catch((err) => {
+        console.error('Error al registrar pago', err);
+        alert('Error al registrar el pago');
+      });
+  };
+
+  // ===============================================
+  // Función para calcular “Pago Restante”
+  // ===============================================
+  const calcularPagoRestante = () => {
+    if (!seleccion) return 0;
+    const totalPagar = Number(seleccion.precio);
+    const sumaPagos = pagos.reduce((acc, p) => acc + Number(p.monto_pagado), 0);
+    return totalPagar - sumaPagos;
   };
 
   // ================================
@@ -145,9 +232,7 @@ function Home() {
           ===================== */}
       <div className="top-bar">
         <div className="logo-container">
-          <div className="logo">
-            {/* SVG del logo */}
-          </div>
+          <div className="logo">{/* SVG del logo */}</div>
           <div className="brand">
             <h1>Hotel de<br />Paso</h1>
           </div>
@@ -294,6 +379,7 @@ function Home() {
             {modalPaso === 2 && (
               <>
                 <h3>Asignación de Habitación</h3>
+
                 <div className="modal-body-dos-columnas">
                   {/* ------------------- Columna Izquierda ------------------- */}
                   <div className="columna-izq">
@@ -312,7 +398,7 @@ function Home() {
                       </p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="form-izq">
+                    <form onSubmit={handleSubmitAsignacion} className="form-izq">
                       <label>Placas / ID de Cliente</label>
                       <input
                         type="text"
@@ -344,6 +430,12 @@ function Home() {
                         <input id="chk-factura" type="checkbox" />
                         <label htmlFor="chk-factura">Solicitar Factura</label>
                       </div>
+
+                      <hr style={{ margin: '10px 0' }} />
+
+                      <button className="btn-asignar-final" type="submit">
+                        ASIGNAR HABITACIÓN
+                      </button>
                     </form>
                   </div>
 
@@ -383,28 +475,37 @@ function Home() {
                     <div className="seccion-pagos">
                       <h4>Forma de Pago</h4>
                       <div className="lista-pagos">
-                        <p style={{ color: '#666' }}>(No hay pagos registrados)</p>
+                        {pagos.length === 0 ? (
+                          <p style={{ color: '#666' }}>(No hay pagos registrados)</p>
+                        ) : (
+                          pagos.map((pago) => (
+                            <div
+                              key={pago.id_pago}
+                              style={{
+                                marginBottom: '6px',
+                                display: 'flex',
+                                justifyContent: 'space-between'
+                              }}
+                            >
+                              <span>{pago.metodo_pago}:</span>
+                              <span>₡{Number(pago.monto_pagado).toLocaleString('es-CR')}</span>
+                            </div>
+                          ))
+                        )}
                       </div>
+
                       <button
                         className="btn-realizar-pago"
                         type="button"
-                        onClick={() => alert('Aquí iría “Realizar un Pago”')}
+                        onClick={() => setMiniModalPago(true)}
                       >
                         REALIZAR UN PAGO
                       </button>
+
                       <div className="info-pago-restante">
                         Pago Restante:{' '}
-                        <strong>
-                          ₡
-                          {(
-                            Number(seleccion.precio) -
-                            Number(formData.descuento || 0)
-                          ).toLocaleString('es-CR')}
-                        </strong>
+                        <strong>₡{calcularPagoRestante().toLocaleString('es-CR')}</strong>
                       </div>
-                      <button className="btn-asignar-final" type="submit">
-                        ASIGNAR HABITACIÓN
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -418,6 +519,51 @@ function Home() {
                   </button>
                 </div>
               </>
+            )}
+
+            {/* =========================
+                MINI‐MODAL PARA REALIZAR PAGO
+                ========================= */}
+            {miniModalPago && (
+              <div className="modal-overlay mini-pago-overlay" onClick={() => setMiniModalPago(false)}>
+                <div className="mini-pago-modal" onClick={(e) => e.stopPropagation()}>
+                  <h4>Registrar Pago</h4>
+
+                  <label>Método de Pago</label>
+                  <select
+                    value={pagoFormulario.metodo}
+                    onChange={(e) => setPagoFormulario({ ...pagoFormulario, metodo: e.target.value })}
+                  >
+                    <option value="EFECTIVO">Efectivo</option>
+                    <option value="TARJETA">Tarjeta</option>
+                  </select>
+
+                  <label>Monto</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={pagoFormulario.monto}
+                    onChange={(e) => setPagoFormulario({ ...pagoFormulario, monto: e.target.value })}
+                    placeholder="Ingrese monto a pagar"
+                  />
+
+                  <div className="mini-pago-buttons">
+                    <button
+                      className="btn-realizar-pago"
+                      onClick={handleRegistrarPago}
+                    >
+                      CONFIRMAR PAGO
+                    </button>
+                    <button
+                      className="btn-cerrar"
+                      onClick={() => setMiniModalPago(false)}
+                    >
+                      CANCELAR
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>

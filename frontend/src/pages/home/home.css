@@ -864,3 +864,89 @@ body {
 .cabina-item:hover {
   background-color: #b2dfdb;
 }
+
+/* ============================================================
+   Overlay y mini‐modal para “Realizar Pago” (estilos nuevos)
+   ============================================================ */
+.mini-pago-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1100; /* Más alto que el modal principal */
+}
+
+.mini-pago-modal {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  width: 320px;
+  max-width: 90%;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  position: relative;
+}
+
+.mini-pago-modal h4 {
+  margin-bottom: 12px;
+  font-size: 18px;
+  color: #222;
+}
+
+.mini-pago-modal label {
+  display: block;
+  margin-top: 10px;
+  font-weight: 600;
+  color: #555;
+}
+
+.mini-pago-modal select,
+.mini-pago-modal input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+.mini-pago-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.mini-pago-buttons .btn-realizar-pago {
+  background-color: #2196f3;
+  color: white;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  flex: 1;
+  margin-right: 8px;
+}
+
+.mini-pago-buttons .btn-realizar-pago:hover {
+  background-color: #1976d2;
+}
+
+.mini-pago-buttons .btn-cerrar {
+  background-color: #999;
+  color: white;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  flex: 1;
+}
+
+.mini-pago-buttons .btn-cerrar:hover {
+  background-color: #777;
+}
