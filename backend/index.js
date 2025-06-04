@@ -789,6 +789,10 @@ app.post('/api/finalizar-mantenimiento', (req, res) => {
  *  INICIAR SERVIDOR
  * ───────────────────────────────────────────────────────────────────────────
  */
-app.listen(PORT, () => {
-  console.log(`Servidor backend corriendo en http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`Servidor backend corriendo en http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
