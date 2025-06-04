@@ -950,3 +950,366 @@ body {
 .mini-pago-buttons .btn-cerrar:hover {
   background-color: #777;
 }
+/* ==============================================
+   ESTILOS PARA “Cabinas Ocupadas” / Limpieza / Mantenimiento
+   ============================================== */
+
+/* CONTENEDOR GENERAL DE TARJETAS “OCUPADAS” */
+.cards-ocupacion-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px; /* separación entre cards */
+  padding: 10px 0;
+}
+
+/* CADA CARD de Ocupación */
+.occupation-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  width: 280px; /* ajusta si quieres más/m menos ancho */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+/* HEAD de la card: Nº grande + tiempo restante (amarillo) */
+.occupation-header {
+  display: flex;
+  background-color: #ffc107; /* color amarillo para “Ocupación” */
+  padding: 12px;
+  align-items: center;
+}
+
+/* Número de cabina grande */
+.room-big-number {
+  font-size: 48px;
+  font-weight: bold;
+  margin-right: 12px;
+  color: #fff;
+}
+
+/* Info del timer en la misma línea */
+.room-info {
+  color: #fff;
+  text-align: left;
+  font-size: 14px;
+}
+.room-info .time-value {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* FILA de Ingreso / Salida */
+.check-times {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background-color: #f1f1f1;
+  font-size: 12px;
+}
+
+/* Segunda fila: Duración / Tipo de cabina */
+.room-info-second {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #333;
+}
+
+/* Botones de acción dentro de la card */
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 10px 12px;
+}
+
+.action-btn {
+  flex: 1 1 calc(50% - 5px);
+  background-color: #dc3545; /* Rojo para Solicitar Factura / Reimprimir */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  padding: 8px 0;
+  cursor: pointer;
+  text-align: center;
+}
+.action-btn.ticket {
+  background-color: #dc3545; /* Rojo */
+}
+.action-btn.yellow {
+  background-color: #ff9800; /* Naranja para “Finalizar” */
+  color: #fff;
+}
+.action-btn:hover {
+  opacity: 0.9;
+}
+
+
+/* ---------------------------------------
+   FILAS “room-row” (Disponibilidad / Limpieza)
+   --------------------------------------- */
+
+/* Una fila horizontal con número/cabina y timer y botón */
+.room-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 8px;
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Número pequeño o icono + número cabina */
+.room-number {
+  font-size: 24px;
+  font-weight: bold;
+  width: 60px;
+  text-align: center;
+  margin-right: 10px;
+  color: #333;
+}
+
+/* Texto de tiempo en fila de Limpieza/Mantenimiento */
+.room-time {
+  flex: 1;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Botón “Liberar” (Limpieza/Mantenimiento) */
+.liberar-btn {
+  background-color: #28a745; /* verde para “Liberar” */
+  color: white;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.liberar-btn:hover {
+  opacity: 0.9;
+}
+
+/* BADGE (número dentro de sección-header) */
+.count-badge {
+  background-color: white;
+  color: #008080;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
+  margin-left: 5px;
+  font-weight: bold;
+}
+
+/* Estilo para “mini-pago” overlay */
+.mini-pago-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1001;
+}
+
+.mini-pago-modal {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  width: 350px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.mini-pago-modal h4 {
+  margin-bottom: 12px;
+}
+
+.mini-pago-modal label {
+  display: block;
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+.mini-pago-modal select,
+.mini-pago-modal input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.mini-pago-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.mini-pago-buttons .btn-realizar-pago {
+  background-color: #007bff;
+  color: white;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.mini-pago-buttons .btn-cerrar {
+  background-color: #6c757d;
+  color: white;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.mini-pago-buttons button:hover {
+  opacity: 0.9;
+}
+/* ────────────────────────────────────────────────────
+   ESTILOS PARA “Cabinas Ocupadas” → ocupacion-card
+   Version 1.0 • copia exacta para que quede como el ejemplo
+──────────────────────────────────────────────────── */
+
+/* Contenedor principal de cada estancia */
+.ocupacion-card {
+  background-color: #ffffff;          /* Fondo blanco */
+  border-radius: 8px;                 /* Bordes redondeados */
+  margin-bottom: 16px;                /* Separación vertical entre tarjetas */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); /* Sombra suave */
+  overflow: hidden;                   /* Para que el header no sobresalga */
+  width: 100%;                        /* Ocupa todo el ancho del contenedor padre */
+}
+
+/* ────────────────────────────────────────────────────
+   1) Header amarillo de la tarjeta
+──────────────────────────────────────────────────── */
+.ocupacion-header {
+  display: flex;
+  align-items: center;
+  background-color: #FFC107;   /* Amarillo similar al ejemplo */
+  padding: 12px 16px;
+}
+
+/* Número de cabina en grande a la izquierda */
+.numero-cabina {
+  font-size: 28px;
+  font-weight: bold;
+  color: #ffffff;               /* Blanco para contrastar con el amarillo */
+  margin-right: 24px;
+  width: 50px;                  /* Anchura fija para alinear */
+  text-align: center;
+}
+
+/* Contenedor de “Tiempo Restante” + fechas debajo */
+.info-header {
+  flex: 1;                      /* Ocupa el espacio central */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Tiempo restante (etiqueta encima y dato debajo) */
+.tiempo-restante {
+  font-size: 14px;
+  color: #ffffff;               /* Blanco */
+  margin-bottom: 4px;
+}
+.tiempo-restante-dato {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffffff;               /* Blanco */
+}
+
+/* Fechas (ingreso/salida) dentro del header */
+.fechas-header {
+  font-size: 12px;
+  color: #ffffff;               /* Blanco */
+  margin-top: 2px;
+}
+
+/* Iconos que van alineados a la derecha en el header */
+.iconos-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;                     /* Espacio entre iconos */
+}
+.icon-personas {
+  font-size: 16px;
+  color: #ffffff;               /* Blanco */
+}
+
+/* ────────────────────────────────────────────────────
+   2) Body con datos “Placa, Tipo, Duración”
+──────────────────────────────────────────────────── */
+.ocupacion-body {
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #333333;               /* Gris oscuro para texto principal */
+  background-color: #ffffff;
+}
+.ocupacion-body p,
+.ocupacion-body div {
+  margin: 4px 0;
+}
+
+/* ────────────────────────────────────────────────────
+   3) Footer con botones rojos
+──────────────────────────────────────────────────── */
+.ocupacion-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;     /* Espacio pequeño entre botones */
+  padding: 12px 16px;
+  background-color: #ffffff;
+}
+
+/* Botones rojos estilo Moteles.com */
+.btn-rojo {
+  background-color: #E74C3C;       /* Rojo intenso */
+  color: #ffffff;                  /* Texto blanco */
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.btn-rojo:hover {
+  background-color: #C0392B;       /* Rojo más oscuro al pasar el ratón */
+}
+
+/* Si quieres que “Finalizar” sea un poco distinto (ejemplo: borde extra) */
+.btn-finalizar {
+  border: 2px solid #ffffff;
+}
+
+/* ────────────────────────────────────────────────────
+   Ajustes generales para scrollbar en “Cabinas Ocupadas”
+   (para que no se vea desalineado)
+──────────────────────────────────────────────────── */
+.section-content::-webkit-scrollbar {
+  width: 8px;
+}
+.section-content::-webkit-scrollbar-thumb {
+  background-color: #008080;  /* Teal, igual que tus otras secciones */
+  border-radius: 4px;
+}
+.section-content::-webkit-scrollbar-track {
+  background-color: #f0f0f0;
+}
+
+
