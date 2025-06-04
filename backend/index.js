@@ -11,6 +11,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+
 /**
  * ───────────────────────────────────────────────────────────────────────────
  *  📦 Conexión a MySQL
@@ -116,7 +117,7 @@ app.get('/api/cabinas-disponibles', (req, res) => {
  * ───────────────────────────────────────────────────────────────────────────
  */
 app.get('/api/precios/:tipo', (req, res) => {
-  const tipo = req.params.tipo.toUpperCase(); // Aseguramos mayúsculas
+  const tipo = req.params.tipo.toUpperCase();
   const sql = `
     SELECT duracion_horas, precio
     FROM Precios
@@ -268,14 +269,14 @@ app.post('/api/asignar-cabina', (req, res) => {
  * ───────────────────────────────────────────────────────────────────────────
  *  RUTA: /api/estancias-activas
  *  - Devuelve todas las estancias con estado='activa'
- *    junto con datos: número de cabina, tipo, duracion_horas, fecha_ingreso, placa_cliente.
- *  - El campo `duracion` se renombra a `duracion_horas` para que el frontend pueda usarlo.
+ *    junto con datos: id_cabina, número de cabina, tipo, duracion_horas, fecha_ingreso, placa_cliente.
  * ───────────────────────────────────────────────────────────────────────────
  */
 app.get('/api/estancias-activas', (req, res) => {
   const sql = `
     SELECT
       e.id_estancia,
+      e.id_cabina,
       c.numero            AS numero_cabina,
       e.tipo_cabina,
       e.duracion          AS duracion_horas,
@@ -350,17 +351,18 @@ app.post('/api/registrar-pago', (req, res) => {
 
 /**
  * ───────────────────────────────────────────────────────────────────────────
- *  RUTA: /api/finalizar-estancia/:id_estancia
+ *  NUEVA RUTA: /api/finalizar-estancia-limpieza/:id_estancia
  *  - Método: PUT
  *  - Recibe en params “id_estancia”
  *  - Actualiza:
- *      * Estancias.fecha_salida = NOW()
- *      * Estancias.estado = 'finalizada'
- *    Luego marca la cabina como estado = 'limpieza'.
+ *      * Estancias.fecha_salida = NOW(), estado = 'finalizada'
+ *    Luego:
+ *      * Inserta en tabla Limpieza (id_cabina, realizada_por, fecha, observaciones)
+ *      * Actualiza Cabinas.estado = 'limpieza', fecha_estado = NOW()
  *  - Devuelve { mensaje: 'Estancia finalizada. Cabina en limpieza.' }
  * ───────────────────────────────────────────────────────────────────────────
  */
-app.put('/api/finalizar-estancia/:id_estancia', (req, res) => {
+app.put('/api/finalizar-estancia-limpieza/:id_estancia', (req, res) => {
   const id_estancia = parseInt(req.params.id_estancia, 10);
   if (!id_estancia) {
     return res.status(400).json({ error: 'ID de estancia requerido' });
@@ -390,14 +392,105 @@ app.put('/api/finalizar-estancia/:id_estancia', (req, res) => {
         return res.status(500).json({ error: 'Error al finalizar estancia' });
       }
 
-      // 3) Marcar la cabina como “limpieza”
-      const sqlCabinaLimpieza = `UPDATE Cabinas SET estado = 'limpieza', fecha_estado = NOW() WHERE id_cabina = ?`;
-      conexion.query(sqlCabinaLimpieza, [idCabina], (err3) => {
+      // 3) Insertar un registro en Limpieza
+      const idUsuario = 1; // Podrías reemplazar por el usuario logueado
+      const sqlInsertarLimpieza = `
+        INSERT INTO Limpieza (id_cabina, realizada_por, fecha, observaciones)
+        VALUES (?, ?, NOW(), '')
+      `;
+      conexion.query(sqlInsertarLimpieza, [idCabina, idUsuario], (err3, resultLimpieza) => {
         if (err3) {
-          console.error('❌ Error al pasar cabina a limpieza:', err3);
-          return res.status(500).json({ error: 'Error al actualizar cabina' });
+          console.error('❌ Error al insertar registro de limpieza:', err3);
+          return res.status(500).json({ error: 'Error al registrar limpieza' });
         }
-        res.json({ mensaje: 'Estancia finalizada. Cabina marcada para limpieza.' });
+
+        // 4) Actualizar la cabina a "limpieza"
+        const sqlCabinaLimpieza = `
+          UPDATE Cabinas
+          SET estado = 'limpieza', fecha_estado = NOW()
+          WHERE id_cabina = ?
+        `;
+        conexion.query(sqlCabinaLimpieza, [idCabina], (err4) => {
+          if (err4) {
+            console.error('❌ Error al actualizar cabina a limpieza:', err4);
+            return res.status(500).json({ error: 'Error al actualizar cabina' });
+          }
+          res.json({ mensaje: 'Estancia finalizada. Cabina marcada para limpieza.' });
+        });
+      });
+    });
+  });
+});
+
+
+/**
+ * ───────────────────────────────────────────────────────────────────────────
+ *  NUEVA RUTA: /api/finalizar-estancia-mantenimiento/:id_estancia
+ *  - Método: PUT
+ *  - Recibe en params “id_estancia”
+ *  - Actualiza:
+ *      * Estancias.fecha_salida = NOW(), estado = 'finalizada'
+ *    Luego:
+ *      * Inserta en tabla Mantenimiento (id_cabina, descripcion, fecha, estado='pendiente', registrado_por)
+ *      * Actualiza Cabinas.estado = 'mantenimiento', fecha_estado = NOW()
+ *  - Devuelve { mensaje: 'Estancia finalizada. Cabina en mantenimiento.' }
+ * ───────────────────────────────────────────────────────────────────────────
+ */
+app.put('/api/finalizar-estancia-mantenimiento/:id_estancia', (req, res) => {
+  const id_estancia = parseInt(req.params.id_estancia, 10);
+  if (!id_estancia) {
+    return res.status(400).json({ error: 'ID de estancia requerido' });
+  }
+
+  // 1) Obtener el id_cabina de esa estancia
+  const sqlGetCabina = `SELECT id_cabina FROM Estancias WHERE id_estancia = ? LIMIT 1`;
+  conexion.query(sqlGetCabina, [id_estancia], (err, rows) => {
+    if (err) {
+      console.error('❌ Error al buscar cabina de la estancia:', err);
+      return res.status(500).json({ error: 'Error en la BD' });
+    }
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Estancia no encontrada' });
+    }
+    const idCabina = rows[0].id_cabina;
+
+    // 2) Actualizar la estancia: fecha_salida = NOW(), estado = 'finalizada'
+    const sqlFinalizar = `
+      UPDATE Estancias
+      SET fecha_salida = NOW(), estado = 'finalizada'
+      WHERE id_estancia = ?
+    `;
+    conexion.query(sqlFinalizar, [id_estancia], (err2) => {
+      if (err2) {
+        console.error('❌ Error al finalizar estancia:', err2);
+        return res.status(500).json({ error: 'Error al finalizar estancia' });
+      }
+
+      // 3) Insertar un registro en Mantenimiento
+      const idUsuario = 1; // Podrías reemplazar por el usuario logueado
+      const sqlInsertarMant = `
+        INSERT INTO Mantenimiento (id_cabina, descripcion, fecha, estado, registrado_por)
+        VALUES (?, 'Enviado desde el frontend al finalizar estancia', NOW(), 'pendiente', ?)
+      `;
+      conexion.query(sqlInsertarMant, [idCabina, idUsuario], (err3, resultMant) => {
+        if (err3) {
+          console.error('❌ Error al insertar registro de mantenimiento:', err3);
+          return res.status(500).json({ error: 'Error al registrar mantenimiento' });
+        }
+
+        // 4) Actualizar la cabina a "mantenimiento"
+        const sqlCabinaMant = `
+          UPDATE Cabinas
+          SET estado = 'mantenimiento', fecha_estado = NOW()
+          WHERE id_cabina = ?
+        `;
+        conexion.query(sqlCabinaMant, [idCabina], (err4) => {
+          if (err4) {
+            console.error('❌ Error al actualizar cabina a mantenimiento:', err4);
+            return res.status(500).json({ error: 'Error al actualizar cabina' });
+          }
+          res.json({ mensaje: 'Estancia finalizada. Cabina marcada para mantenimiento.' });
+        });
       });
     });
   });
@@ -456,8 +549,7 @@ app.put('/api/ampliar-estancia/:id_estancia', (req, res) => {
  * ───────────────────────────────────────────────────────────────────────────
  *  RUTA: /api/estancias-limpieza
  *  - Devuelve la lista de cabinas cuyo estado = 'limpieza' junto con la fecha de inicio
- *    de la limpieza (archivo `Limpieza`). Aquí suponemos que ya tienes un trigger o insert
- *    manual en tabla Limpieza cada vez que marcas la cabina en limpieza.
+ *    de la limpieza (tabla Limpieza).
  * ───────────────────────────────────────────────────────────────────────────
  */
 app.get('/api/estancias-limpieza', (req, res) => {
@@ -479,57 +571,6 @@ app.get('/api/estancias-limpieza', (req, res) => {
       return res.status(500).json({ error: 'Error al obtener limpieza' });
     }
     res.json(rows);
-  });
-});
-
-
-/**
- * ───────────────────────────────────────────────────────────────────────────
- *  RUTA: /api/finalizar-limpieza
- *  - Método: POST
- *  - Recibe { id_limpieza, usuario_id, observaciones } en el body
- *  - Actualiza:
- *      * Cabinas.estado = 'disponible'
- *      * Elimina el registro de Limpieza (o lo marca como completado)
- *  - Devuelve { mensaje: 'Limpieza finalizada. Cabina disponible.' }
- * ───────────────────────────────────────────────────────────────────────────
- */
-app.post('/api/finalizar-limpieza', (req, res) => {
-  const { id_limpieza, usuario_id, observaciones } = req.body;
-  if (!id_limpieza) {
-    return res.status(400).json({ error: 'ID de limpieza requerido' });
-  }
-
-  // 1) Obtener id_cabina desde Limpieza
-  const sqlGetCabina = `SELECT id_cabina FROM Limpieza WHERE id_limpieza = ? LIMIT 1`;
-  conexion.query(sqlGetCabina, [id_limpieza], (err, rows) => {
-    if (err) {
-      console.error('❌ Error al buscar registro de limpieza:', err);
-      return res.status(500).json({ error: 'Error en la BD' });
-    }
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Registro de limpieza no encontrado' });
-    }
-    const idCabina = rows[0].id_cabina;
-
-    // 2) Marcar cabina como disponible
-    const sqlCabinaDisponible = `UPDATE Cabinas SET estado = 'disponible', fecha_estado = NOW() WHERE id_cabina = ?`;
-    conexion.query(sqlCabinaDisponible, [idCabina], (err2) => {
-      if (err2) {
-        console.error('❌ Error al actualizar cabina a disponible:', err2);
-        return res.status(500).json({ error: 'Error al actualizar cabina' });
-      }
-
-      // 3) Eliminar el registro de Limpieza (o podrías marcarlo como “completado”)
-      const sqlEliminarLimpieza = `DELETE FROM Limpieza WHERE id_limpieza = ?`;
-      conexion.query(sqlEliminarLimpieza, [id_limpieza], (err3) => {
-        if (err3) {
-          console.error('❌ Error al eliminar registro de limpieza:', err3);
-          return res.status(500).json({ error: 'Error al eliminar registro de limpieza' });
-        }
-        res.json({ mensaje: 'Limpieza finalizada. Cabina disponible.' });
-      });
-    });
   });
 });
 
@@ -564,6 +605,57 @@ app.post('/api/registrar-limpieza', (req, res) => {
         return res.status(500).json({ error: 'Error al actualizar cabina' });
       }
       res.json({ mensaje: 'Limpieza registrada', id_limpieza: result.insertId });
+    });
+  });
+});
+
+
+/**
+ * ───────────────────────────────────────────────────────────────────────────
+ *  RUTA: /api/finalizar-limpieza
+ *  - Método: POST
+ *  - Recibe { id_limpieza, usuario_id, observaciones } en el body
+ *  - Actualiza:
+ *      * Cabinas.estado = 'disponible'
+ *      * Elimina el registro de Limpieza
+ *  - Devuelve { mensaje: 'Limpieza finalizada. Cabina disponible.' }
+ * ───────────────────────────────────────────────────────────────────────────
+ */
+app.post('/api/finalizar-limpieza', (req, res) => {
+  const { id_limpieza, usuario_id, observaciones } = req.body;
+  if (!id_limpieza) {
+    return res.status(400).json({ error: 'ID de limpieza requerido' });
+  }
+
+  // 1) Obtener id_cabina desde Limpieza
+  const sqlGetCabina = `SELECT id_cabina FROM Limpieza WHERE id_limpieza = ? LIMIT 1`;
+  conexion.query(sqlGetCabina, [id_limpieza], (err, rows) => {
+    if (err) {
+      console.error('❌ Error al buscar registro de limpieza:', err);
+      return res.status(500).json({ error: 'Error en la BD' });
+    }
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Registro de limpieza no encontrado' });
+    }
+    const idCabina = rows[0].id_cabina;
+
+    // 2) Marcar cabina como disponible
+    const sqlCabinaDisponible = `UPDATE Cabinas SET estado = 'disponible', fecha_estado = NOW() WHERE id_cabina = ?`;
+    conexion.query(sqlCabinaDisponible, [idCabina], (err2) => {
+      if (err2) {
+        console.error('❌ Error al actualizar cabina a disponible:', err2);
+        return res.status(500).json({ error: 'Error al actualizar cabina' });
+      }
+
+      // 3) Eliminar el registro de Limpieza
+      const sqlEliminarLimpieza = `DELETE FROM Limpieza WHERE id_limpieza = ?`;
+      conexion.query(sqlEliminarLimpieza, [id_limpieza], (err3) => {
+        if (err3) {
+          console.error('❌ Error al eliminar registro de limpieza:', err3);
+          return res.status(500).json({ error: 'Error al eliminar registro de limpieza' });
+        }
+        res.json({ mensaje: 'Limpieza finalizada. Cabina disponible.' });
+      });
     });
   });
 });
@@ -644,6 +736,7 @@ app.post('/api/registrar-mantenimiento', (req, res) => {
  *  - Actualiza:
  *      * Mantenimiento.estado = 'completado'
  *      * Cabinas.estado      = 'disponible'
+ *      * Actualiza fecha_estado en cabina
  *  - Devuelve { mensaje: 'Mantenimiento finalizado. Cabina disponible.' }
  * ───────────────────────────────────────────────────────────────────────────
  */
@@ -677,7 +770,7 @@ app.post('/api/finalizar-mantenimiento', (req, res) => {
         return res.status(500).json({ error: 'Error al finalizar mantenimiento' });
       }
 
-      // 3) Marcar la cabina como “disponible”
+      // 3) Marcar la cabina como “disponible” y actualizar fecha_estado
       const sqlCabinaDisp = `UPDATE Cabinas SET estado = 'disponible', fecha_estado = NOW() WHERE id_cabina = ?`;
       conexion.query(sqlCabinaDisp, [idCabina], (err3) => {
         if (err3) {

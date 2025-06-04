@@ -1,4 +1,4 @@
-// /frontend/src/pages/home/index.js
+// frontend/src/pages/home/index.js
 
 import React, { useEffect, useState, useRef } from 'react';
 import './home.css';
@@ -14,6 +14,18 @@ function Home() {
   // =========================
   const [estanciasActivas, setEstanciasActivas] = useState([]); // Siempre un arreglo
   const timersRef = useRef({}); // Guardará timers para cada estancia
+
+  // =========================
+  // Estados para Limpieza y Mantenimiento
+  // =========================
+  const [limpiezaList, setLimpiezaList] = useState([]);               // items en estado “limpieza”
+  const [mantenimientoList, setMantenimientoList] = useState([]);     // items en estado “mantenimiento”
+
+  // =========================
+  // Estados del Modal de Confirmación (cuando finalizo una estancia)
+  // =========================
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [estanciaParaFinalizar, setEstanciaParaFinalizar] = useState(null);
 
   // =========================
   // Estados del Modal de Asignación y Pagos
@@ -45,11 +57,13 @@ function Home() {
   });
 
   // =========================
-  // useEffect principal: cargar disponibilidad y estancias al montar
+  // useEffect principal: cargar disponibilidad, estancias, limpieza y mantenimiento
   // =========================
   useEffect(() => {
     cargarDisponibilidad();
     cargarEstanciasActivas();
+    cargarLimpieza();
+    cargarMantenimiento();
 
     // Cleanup: limpiar todos los timers al desmontar el componente
     return () => {
@@ -72,7 +86,10 @@ function Home() {
   // ────────────────────────────────────────────────────────────────────────────
   const cargarEstanciasActivas = () => {
     fetch('http://localhost:5000/api/estancias-activas')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('Error al obtener estancias activas');
+        return res.json();
+      })
       .then((data) => {
         const arr = Array.isArray(data) ? data : [];
         setEstanciasActivas(arr);
@@ -94,261 +111,64 @@ function Home() {
           }
         });
       })
-      .catch((err) => console.error('Error al obtener estancias activas:', err));
+      .catch((err) => console.error(err));
+  };
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // Función: cargarLimpieza() → GET /api/estancias-limpieza
+  // ────────────────────────────────────────────────────────────────────────────
+  const cargarLimpieza = () => {
+    fetch('http://localhost:5000/api/estancias-limpieza')
+      .then((res) => {
+        if (!res.ok) throw new Error('Error al obtener limpieza');
+        return res.json();
+      })
+      .then((data) => {
+        setLimpiezaList(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => console.error('Error al cargar limpieza:', err));
+  };
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // Función: cargarMantenimiento() → GET /api/mantenimiento-pendiente
+  // ────────────────────────────────────────────────────────────────────────────
+  const cargarMantenimiento = () => {
+    fetch('http://localhost:5000/api/mantenimiento-pendiente')
+      .then((res) => {
+        if (!res.ok) throw new Error('Error al obtener mantenimiento');
+        return res.json();
+      })
+      .then((data) => {
+        setMantenimientoList(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => console.error('Error al cargar mantenimiento:', err));
   };
 
   // ────────────────────────────────────────────────────────────────────────────
   // Función: calcularTiempoRestante(estancia) → Devuelve "HH:MM:SS" o "—:—:—"
-  // If duracion_horas = 0, mostramos "— hrs" directamente en la vista.
   // ────────────────────────────────────────────────────────────────────────────
   const calcularTiempoRestante = (estancia) => {
     const duracionHoras = Number(estancia.duracion_horas);
     if (!duracionHoras || duracionHoras <= 0) {
       return '—:—:—';
     }
-
     try {
       const ingresoMs = new Date(estancia.fecha_ingreso).getTime();
       const duracionMs = duracionHoras * 60 * 60 * 1000;
       const finProgramado = ingresoMs + duracionMs;
       const ahora = Date.now();
       const diff = finProgramado - ahora;
-
       if (diff <= 0) {
         return '00:00:00';
       }
-
       const horas = Math.floor(diff / (1000 * 60 * 60));
       const minutos = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const segundos = Math.floor((diff % (1000 * 60)) / 1000);
-
       const pad = (n) => n.toString().padStart(2, '0');
       return `${pad(horas)}:${pad(minutos)}:${pad(segundos)}`;
-    } catch (error) {
+    } catch {
       return '00:00:00';
     }
-  };
-
-  // ────────────────────────────────────────────────────────────────────────────
-  // Función: abrirModal(tipo) – Paso 1: Elegir tipo de cabina (SENCILLA / VIP)
-  // ────────────────────────────────────────────────────────────────────────────
-  const abrirModal = (tipo) => {
-    setModalTipo(tipo);
-    setSeleccion(null);
-    setCabinas([]);
-    setModalPaso(1);
-    setModalVisible(true);
-
-    // Cargar duraciones/precios
-    fetch(`http://localhost:5000/api/precios/${tipo}`)
-      .then((res) => res.json())
-      .then((data) => setModalPrecios(data))
-      .catch((err) => console.error('Error al obtener precios:', err));
-  };
-
-  // ────────────────────────────────────────────────────────────────────────────
-  // Función: cerrarModal() – Cierra modal y resetea todos los estados relacionados
-  // ────────────────────────────────────────────────────────────────────────────
-  const cerrarModal = () => {
-    setModalVisible(false);
-    setModalTipo('');
-    setModalPrecios([]);
-    setCabinas([]);
-    setSeleccion(null);
-    setFormData({ placa: '', personas: '', descuento: '' });
-    setCargandoCabinas(false);
-
-    setMiniModalPago(false);
-    setPagoFormulario({ metodo: 'EFECTIVO', monto: '' });
-    setPagos([]);
-    setIdEstancia(null);
-  };
-
-  // ────────────────────────────────────────────────────────────────────────────
-  // Función: elegirDuracion(precioObj) – Paso 1.1: Selecciona horas/precio
-  // ────────────────────────────────────────────────────────────────────────────
-  const elegirDuracion = (precioObj) => {
-    setSeleccion(precioObj);
-    setCargandoCabinas(true);
-
-    // Después de elegir duración, traer lista de cabinas libres
-    fetch(`http://localhost:5000/api/cabinas-por-tipo/${modalTipo}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setCabinas(data);
-        setCargandoCabinas(false);
-      })
-      .catch((err) => {
-        console.error('Error al obtener cabinas:', err);
-        setCargandoCabinas(false);
-      });
-  };
-
-  // ────────────────────────────────────────────────────────────────────────────
-  // Función: elegirCabina(numeroCabina) – Paso 1.2: Selecciona la cabina específica
-  // ────────────────────────────────────────────────────────────────────────────
-  const elegirCabina = (numeroCabina) => {
-    setSeleccion((prev) => ({ ...prev, cabina: numeroCabina }));
-    setModalPaso(2);
-  };
-
-  // ────────────────────────────────────────────────────────────────────────────
-  // Función: handleSubmitAsignacion(e) – Paso 2: POST /api/asignar-cabina
-  // ────────────────────────────────────────────────────────────────────────────
-  const handleSubmitAsignacion = (e) => {
-    e.preventDefault();
-
-    const payload = {
-      cabina: seleccion?.cabina,
-      tipo: modalTipo,
-      duracion: seleccion?.duracion_horas,
-      precio: seleccion?.precio,
-      placa: formData.placa,
-      personas: formData.personas,
-      descuento: formData.descuento,
-    };
-
-    fetch('http://localhost:5000/api/asignar-cabina', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-      .then((res) => res.json())
-      .then((response) => {
-        alert('🏷️ Cabina asignada con éxito');
-
-        // Guardar id_estancia
-        const nuevoId = response.id_estancia;
-        setIdEstancia(nuevoId);
-
-        // Cargar pagos (inicialmente vacío)
-        cargarPagosDeEstancia(nuevoId);
-
-        // Recargar columnas
-        cargarDisponibilidad();
-        cargarEstanciasActivas();
-
-        // Abrir mini‐modal de primer pago
-        setMiniModalPago(true);
-      })
-      .catch((err) => {
-        console.error('Error al asignar cabina:', err);
-        alert('🚨 Error al asignar la cabina');
-      });
-  };
-
-  // ────────────────────────────────────────────────────────────────────────────
-  // Función: cargarPagosDeEstancia(id_est) – GET /api/pagos/:id_estancia
-  // ────────────────────────────────────────────────────────────────────────────
-  const cargarPagosDeEstancia = (id_est) => {
-    fetch(`http://localhost:5000/api/pagos/${id_est}`)
-      .then((res) => res.json())
-      .then((data) => setPagos(data))
-      .catch((err) => console.error('Error al obtener pagos:', err));
-  };
-
-  // ────────────────────────────────────────────────────────────────────────────
-  // Función: handleRegistrarPago() – POST /api/registrar-pago
-  // ────────────────────────────────────────────────────────────────────────────
-  const handleRegistrarPago = () => {
-    if (!idEstancia) {
-      alert('Primero debes asignar la habitación para registrar un pago.');
-      return;
-    }
-    if (!pagoFormulario.monto || Number(pagoFormulario.monto) <= 0) {
-      alert('Ingresa un monto válido.');
-      return;
-    }
-
-    const payload = {
-      id_estancia: idEstancia,
-      metodo_pago: pagoFormulario.metodo,
-      monto_pagado: parseFloat(pagoFormulario.monto),
-    };
-
-    fetch('http://localhost:5000/api/registrar-pago', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-      .then((res) => res.json())
-      .then((resp) => {
-        alert('💲 Pago registrado correctamente');
-        cargarPagosDeEstancia(idEstancia);
-        setMiniModalPago(false);
-        setPagoFormulario({ metodo: 'EFECTIVO', monto: '' });
-      })
-      .catch((err) => {
-        console.error('Error al registrar pago:', err);
-        alert('🚨 Error al registrar el pago');
-      });
-  };
-
-  // ────────────────────────────────────────────────────────────────────────────
-  // Función: calcularPagoRestante() → total – suma de pagos
-  // ────────────────────────────────────────────────────────────────────────────
-  const calcularPagoRestante = () => {
-    if (!seleccion) return 0;
-    const totalPagar = Number(seleccion.precio);
-    const sumaPagos = pagos.reduce((acc, p) => acc + Number(p.monto_pagado), 0);
-    return totalPagar - sumaPagos;
-  };
-
-  // ────────────────────────────────────────────────────────────────────────────
-  // Función: finalizarEstancia(id_estancia) – PUT /api/finalizar-estancia/:id_estancia
-  // ────────────────────────────────────────────────────────────────────────────
-  const finalizarEstancia = (id_est) => {
-    fetch(`http://localhost:5000/api/finalizar-estancia/${id_est}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error('no ok');
-        return res.json();
-      })
-      .then((resp) => {
-        alert('✅ Estancia finalizada y cabina enviada a limpieza');
-        cargarEstanciasActivas();
-        cargarDisponibilidad();
-      })
-      .catch((err) => {
-        console.error('Error al finalizar estancia:', err);
-        alert('🚨 Error al finalizar la estancia');
-      });
-  };
-
-  // ────────────────────────────────────────────────────────────────────────────
-  // Función: ampliarEstancia(id_est, horasExtra) – PUT /api/ampliar-estancia/:id_estancia
-  // ────────────────────────────────────────────────────────────────────────────
-  const ampliarEstancia = (id_est, horasExtra) => {
-    if (!horasExtra || isNaN(horasExtra) || Number(horasExtra) <= 0) {
-      alert('Ingresa un número válido de horas adicionales.');
-      return;
-    }
-    fetch(`http://localhost:5000/api/ampliar-estancia/${id_est}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ horas_extra: parseInt(horasExtra, 10) }),
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error('no ok');
-        return res.json();
-      })
-      .then((resp) => {
-        alert('⏳ Estancia ampliada exitosamente');
-        cargarEstanciasActivas();
-      })
-      .catch((err) => {
-        console.error('Error al ampliar estancia:', err);
-        alert('🚨 Error al ampliar la estancia');
-      });
-  };
-
-  // ────────────────────────────────────────────────────────────────────────────
-  // Función: solicitarFactura(id_estancia) → placeholder
-  // ────────────────────────────────────────────────────────────────────────────
-  const solicitarFactura = (id_est) => {
-    alert(`🧾 Factura solicitada para estancia ${id_est}`);
   };
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -366,6 +186,268 @@ function Home() {
     } catch {
       return '—';
     }
+  };
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // FUNCIONES PARA ASIGNAR CABINA (igual que antes, sin cambios)
+  // ────────────────────────────────────────────────────────────────────────────
+  const abrirModal = (tipo) => {
+    setModalTipo(tipo);
+    setSeleccion(null);
+    setCabinas([]);
+    setModalPaso(1);
+    setModalVisible(true);
+    fetch(`http://localhost:5000/api/precios/${tipo}`)
+      .then((res) => res.json())
+      .then((data) => setModalPrecios(data))
+      .catch((err) => console.error('Error al obtener precios:', err));
+  };
+  const cerrarModal = () => {
+    setModalVisible(false);
+    setModalTipo('');
+    setModalPrecios([]);
+    setCabinas([]);
+    setSeleccion(null);
+    setFormData({ placa: '', personas: '', descuento: '' });
+    setCargandoCabinas(false);
+    setMiniModalPago(false);
+    setPagoFormulario({ metodo: 'EFECTIVO', monto: '' });
+    setPagos([]);
+    setIdEstancia(null);
+  };
+  const elegirDuracion = (precioObj) => {
+    setSeleccion(precioObj);
+    setCargandoCabinas(true);
+    fetch(`http://localhost:5000/api/cabinas-por-tipo/${modalTipo}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setCabinas(data);
+        setCargandoCabinas(false);
+      })
+      .catch((err) => {
+        console.error('Error al obtener cabinas:', err);
+        setCargandoCabinas(false);
+      });
+  };
+  const elegirCabina = (numeroCabina) => {
+    setSeleccion((prev) => ({ ...prev, cabina: numeroCabina }));
+    setModalPaso(2);
+  };
+  const handleSubmitAsignacion = (e) => {
+    e.preventDefault();
+    const payload = {
+      cabina: seleccion?.cabina,
+      tipo: modalTipo,
+      duracion: seleccion?.duracion_horas,
+      precio: seleccion?.precio,
+      placa: formData.placa,
+      personas: formData.personas,
+      descuento: formData.descuento,
+    };
+    fetch('http://localhost:5000/api/asignar-cabina', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Error al asignar cabina');
+        return res.json();
+      })
+      .then((response) => {
+        alert('🏷️ Cabina asignada con éxito');
+        const nuevoId = response.id_estancia;
+        setIdEstancia(nuevoId);
+        cargarPagosDeEstancia(nuevoId);
+        cargarDisponibilidad();
+        cargarEstanciasActivas();
+        setMiniModalPago(true);
+      })
+      .catch((err) => {
+        console.error('Error al asignar cabina:', err);
+        alert('🚨 Error al asignar la cabina');
+      });
+  };
+  const cargarPagosDeEstancia = (id_est) => {
+    fetch(`http://localhost:5000/api/pagos/${id_est}`)
+      .then((res) => res.json())
+      .then((data) => setPagos(data))
+      .catch((err) => console.error('Error al obtener pagos:', err));
+  };
+  const handleRegistrarPago = () => {
+    if (!idEstancia) {
+      alert('Primero debes asignar la habitación para registrar un pago.');
+      return;
+    }
+    if (!pagoFormulario.monto || Number(pagoFormulario.monto) <= 0) {
+      alert('Ingresa un monto válido.');
+      return;
+    }
+    const payload = {
+      id_estancia: idEstancia,
+      metodo_pago: pagoFormulario.metodo,
+      monto_pagado: parseFloat(pagoFormulario.monto),
+    };
+    fetch('http://localhost:5000/api/registrar-pago', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Error al registrar pago');
+        return res.json();
+      })
+      .then((resp) => {
+        alert('💲 Pago registrado correctamente');
+        cargarPagosDeEstancia(idEstancia);
+        setMiniModalPago(false);
+        setPagoFormulario({ metodo: 'EFECTIVO', monto: '' });
+      })
+      .catch((err) => {
+        console.error('Error al registrar pago:', err);
+        alert('🚨 Error al registrar el pago');
+      });
+  };
+  const calcularPagoRestante = () => {
+    if (!seleccion) return 0;
+    const totalPagar = Number(seleccion.precio);
+    const sumaPagos = pagos.reduce((acc, p) => acc + Number(p.monto_pagado), 0);
+    return totalPagar - sumaPagos;
+  };
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // NUEVA FUNCIÓN: ampliarEstancia (se había estado mostrando error “not defined”)
+  // ────────────────────────────────────────────────────────────────────────────
+  const ampliarEstancia = (id_est, horasExtra) => {
+    if (!horasExtra || isNaN(horasExtra) || Number(horasExtra) <= 0) {
+      alert('Ingresa un número válido de horas adicionales.');
+      return;
+    }
+    fetch(`http://localhost:5000/api/ampliar-estancia/${id_est}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ horas_extra: parseInt(horasExtra, 10) }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Error al ampliar estancia');
+        return res.json();
+      })
+      .then((resp) => {
+        alert('⏳ Estancia ampliada exitosamente');
+        cargarEstanciasActivas();
+      })
+      .catch((err) => {
+        console.error('Error al ampliar estancia:', err);
+        alert('🚨 Error al ampliar la estancia');
+      });
+  };
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // FUNCIONES PARA FINALIZAR ESTANCIA (ahora con dos opciones: Limpieza o Mantenimiento)
+  // ────────────────────────────────────────────────────────────────────────────
+  const abrirConfirmModal = (id_estancia) => {
+    setEstanciaParaFinalizar(id_estancia);
+    setShowConfirmModal(true);
+  };
+  const cerrarConfirmModal = () => {
+    setEstanciaParaFinalizar(null);
+    setShowConfirmModal(false);
+  };
+
+  // 1) Enviar a Limpieza: llamamos al nuevo endpoint `/api/finalizar-estancia-limpieza/:id`
+  const confirmarLimpieza = () => {
+    if (!estanciaParaFinalizar) return;
+    fetch(`http://localhost:5000/api/finalizar-estancia-limpieza/${estanciaParaFinalizar}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('No se pudo finalizar estancia (Limpieza)');
+        return res.json();
+      })
+      .then(() => {
+        alert('✅ Estancia finalizada y cabina enviada a Limpieza.');
+        cargarDisponibilidad();
+        cargarEstanciasActivas();
+        cargarLimpieza();
+      })
+      .catch((err) => {
+        console.error(err);
+        alert('🚨 Error al finalizar la estancia para Limpieza.');
+      })
+      .finally(() => {
+        cerrarConfirmModal();
+      });
+  };
+
+  // 2) Enviar a Mantenimiento: llamamos al nuevo endpoint `/api/finalizar-estancia-mantenimiento/:id`
+  const confirmarMantenimiento = () => {
+    if (!estanciaParaFinalizar) return;
+    fetch(`http://localhost:5000/api/finalizar-estancia-mantenimiento/${estanciaParaFinalizar}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('No se pudo finalizar estancia (Mantenimiento)');
+        return res.json();
+      })
+      .then(() => {
+        alert('🛠️ Estancia finalizada y cabina enviada a Mantenimiento.');
+        cargarDisponibilidad();
+        cargarEstanciasActivas();
+        cargarMantenimiento();
+      })
+      .catch((err) => {
+        console.error(err);
+        alert('🚨 Error al finalizar la estancia para Mantenimiento.');
+      })
+      .finally(() => {
+        cerrarConfirmModal();
+      });
+  };
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // FUNCIONES PARA FINALIZAR LIMPIEZA y MANTENIMIENTO DESDE SUS SECCIONES
+  // ────────────────────────────────────────────────────────────────────────────
+  const handleFinalizarLimpieza = (id_limpieza) => {
+    fetch('http://localhost:5000/api/finalizar-limpieza', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_limpieza, usuario_id: 1, observaciones: '' }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('No se pudo finalizar limpieza');
+        return res.json();
+      })
+      .then(() => {
+        alert('✅ Limpieza finalizada. Cabina disponible.');
+        cargarDisponibilidad();
+        cargarLimpieza();
+      })
+      .catch((err) => {
+        console.error(err);
+        alert('🚨 Error al finalizar limpieza.');
+      });
+  };
+
+  const handleFinalizarMantenimiento = (id_mantenimiento) => {
+    fetch('http://localhost:5000/api/finalizar-mantenimiento', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_mantenimiento, usuario_id: 1 }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('No se pudo finalizar mantenimiento');
+        return res.json();
+      })
+      .then(() => {
+        alert('✅ Mantenimiento finalizado. Cabina disponible.');
+        cargarDisponibilidad();
+        cargarMantenimiento();
+      })
+      .catch((err) => {
+        console.error(err);
+        alert('🚨 Error al finalizar mantenimiento.');
+      });
   };
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -413,14 +495,29 @@ function Home() {
             COLUMNA IZQUIERDA
            ──────────────── */}
         <div className="left-column">
-          {/* — Limpieza (tareas pendientes) — */}
+          {/* — Limpieza — */}
           <div className="section limpieza">
             <div className="section-header">
               <span>Limpieza <span className="tool-icon">🧹</span></span>
-              <span className="count-badge">0</span>
+              <span className="count-badge">{limpiezaList.length}</span>
             </div>
             <div className="section-content">
-              <p style={{ color: '#999' }}>Sin registros</p>
+              {limpiezaList.length === 0 ? (
+                <p style={{ color: '#999' }}>Sin registros</p>
+              ) : (
+                limpiezaList.map((item) => (
+                  <div key={item.id_limpieza} className="room-row">
+                    <div className="room-number">#{item.numero_cabina}</div>
+                    <div className="room-time">{formatearFecha(item.fecha_inicio_limpieza)}</div>
+                    <button
+                      className="liberar-btn"
+                      onClick={() => handleFinalizarLimpieza(item.id_limpieza)}
+                    >
+                      Finalizar
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -474,7 +571,7 @@ function Home() {
                   const placa = estancia.placa_cliente || '—';
                   const tipo = estancia.tipo_cabina || '—';
 
-                  // Fecha de salida programada (si duracionHoras > 0)
+                  // Fecha de salida programada
                   const finProgMs = new Date(estancia.fecha_ingreso).getTime() + duracionHoras * 3600000;
                   const salidaForm =
                     duracionHoras > 0
@@ -483,7 +580,7 @@ function Home() {
 
                   return (
                     <div key={estancia.id_estancia} className="ocupacion-card">
-                      {/* — Encabezado amarillo con número grande y tiempo restante — */}
+                      {/* — Header amarillo con número grande y tiempo restante — */}
                       <div className="ocupacion-header">
                         <div className="room-big-number">{estancia.numero_cabina}</div>
                         <div className="time-remaining">
@@ -502,7 +599,7 @@ function Home() {
                         </div>
                       </div>
 
-                      {/* — Cuerpo de la tarjeta con datos — */}
+                      {/* — Cuerpo con datos — */}
                       <div className="ocupacion-body">
                         <div className="detalle-left">
                           <p><strong>Ingreso:</strong> {ingresoForm}</p>
@@ -514,7 +611,7 @@ function Home() {
                         <div className="detalle-buttons">
                           <button
                             className="btn-rojo"
-                            onClick={() => solicitarFactura(estancia.id_estancia)}
+                            onClick={() => alert(`🧾 Factura para estancia ${estancia.id_estancia}`)}
                           >
                             Solicitar Factura
                           </button>
@@ -527,10 +624,7 @@ function Home() {
                           <button
                             className="btn-rojo"
                             onClick={() => {
-                              const horasExtra = prompt(
-                                '¿Cuántas horas adicionales deseas agregar?',
-                                '1'
-                              );
+                              const horasExtra = prompt('¿Cuántas horas adicionales deseas agregar?', '1');
                               if (horasExtra) {
                                 ampliarEstancia(estancia.id_estancia, parseInt(horasExtra, 10));
                               }
@@ -540,11 +634,7 @@ function Home() {
                           </button>
                           <button
                             className="btn-rojo"
-                            onClick={() => {
-                              if (window.confirm('¿Estás seguro de finalizar esta estancia?')) {
-                                finalizarEstancia(estancia.id_estancia);
-                              }
-                            }}
+                            onClick={() => abrirConfirmModal(estancia.id_estancia)}
                           >
                             Finalizar
                           </button>
@@ -566,10 +656,25 @@ function Home() {
           <div className="section mantenimiento">
             <div className="section-header">
               <span>Mantenimiento <span className="tool-icon">🔧</span></span>
-              <span className="count-badge">0</span>
+              <span className="count-badge">{mantenimientoList.length}</span>
             </div>
             <div className="section-content">
-              <p style={{ color: '#999' }}>Sin tareas de mantenimiento</p>
+              {mantenimientoList.length === 0 ? (
+                <p style={{ color: '#999' }}>Sin tareas de mantenimiento</p>
+              ) : (
+                mantenimientoList.map((item) => (
+                  <div key={item.id_mantenimiento} className="room-row">
+                    <div className="room-number">#{item.numero_cabina}</div>
+                    <div className="room-time">Inicio: {formatearFecha(item.fecha_inicio_mantenimiento)}</div>
+                    <button
+                      className="liberar-btn"
+                      onClick={() => handleFinalizarMantenimiento(item.id_mantenimiento)}
+                    >
+                      Finalizar
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -587,14 +692,12 @@ function Home() {
       </div>
 
       {/* =================================================================
-          BLOQUE EXTRA: Overlay + Modal (si modalVisible == true)
+          BLOQUE: Overlay + Modal de Asignación / Pagos (igual que antes)
          ================================================================= */}
       {modalVisible && (
         <div className="modal-overlay" onClick={cerrarModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            {/* ════════════════════════════════════════════════════════
-                PASO 1: Elegir Duración y luego número de cabina
-               ════════════════════════════════════════════════════════ */}
+            {/* ═════════════════ PASO 1: Elegir Duración y luego Cabina ════════════════ */}
             {modalPaso === 1 && (
               <>
                 <h3>Duración para cabina {modalTipo}</h3>
@@ -633,9 +736,7 @@ function Home() {
               </>
             )}
 
-            {/* ════════════════════════════════════════════════════════
-                PASO 2: Formulario de Asignación + sección de Pagos
-               ════════════════════════════════════════════════════════ */}
+            {/* ═════════════════ PASO 2: Formulario de Asignación + Pagos ════════════════ */}
             {modalPaso === 2 && (
               <>
                 <h3>Asignación de Habitación</h3>
@@ -835,6 +936,29 @@ function Home() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────
+          BLOQUE: Modal de Confirmación (Limpieza o Mantenimiento)
+         ──────────────────────────────────────────────────────────────────────── */}
+      {showConfirmModal && (
+        <div className="confirm-modal-overlay" onClick={cerrarConfirmModal}>
+          <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>¿A dónde deseas enviar esta cabina?</h3>
+            <p>Elige uno de los siguientes estados:</p>
+            <div className="confirm-buttons">
+              <button className="btn-limpieza" onClick={confirmarLimpieza}>
+                Enviar a Limpieza
+              </button>
+              <button className="btn-mantenimiento" onClick={confirmarMantenimiento}>
+                Enviar a Mantenimiento
+              </button>
+            </div>
+            <button className="btn-cerrar-modal" onClick={cerrarConfirmModal}>
+              Cancelar
+            </button>
           </div>
         </div>
       )}

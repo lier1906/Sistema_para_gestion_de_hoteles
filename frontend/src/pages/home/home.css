@@ -1312,4 +1312,93 @@ body {
   background-color: #f0f0f0;
 }
 
+/* ───────────────────────────────────────────────────────────────────────────
+   ESTILOS PARA EL MODAL DE CONFIRMACIÓN (LIMPIEZA / MANTENIMIENTO)
+   ─────────────────────────────────────────────────────────────────────────── */
+.confirm-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.confirm-modal {
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 25px 30px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  position: relative;
+}
+
+.confirm-modal h3 {
+  font-size: 20px;
+  margin-bottom: 10px;
+  color: #222;
+}
+
+.confirm-modal p {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.confirm-buttons {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+}
+
+.confirm-buttons .btn-limpieza,
+.confirm-buttons .btn-mantenimiento {
+  flex: 1 1 48%;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.btn-limpieza {
+  background-color: #007d7d;
+  color: white;
+}
+
+.btn-limpieza:hover {
+  opacity: 0.9;
+}
+
+.btn-mantenimiento {
+  background-color: #fbc02d;
+  color: #333;
+}
+
+.btn-mantenimiento:hover {
+  opacity: 0.9;
+}
+
+.btn-cerrar-modal {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: opacity 0.2s ease;
+}
+
+.btn-cerrar-modal:hover {
+  opacity: 0.9;
+}
 
