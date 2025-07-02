@@ -355,29 +355,34 @@ function Home() {
 
   // 1) Enviar a Limpieza: llamamos al nuevo endpoint `/api/finalizar-estancia-limpieza/:id`
   const confirmarLimpieza = () => {
-    if (!estanciaParaFinalizar) return;
-    fetch(`http://localhost:5000/api/finalizar-estancia-limpieza/${estanciaParaFinalizar}`, {
+  if (!estanciaParaFinalizar) return;
+
+
+
+  // 2) Enviamos el cuerpo con { limpiador }
+  fetch(
+    `http://localhost:5000/api/finalizar-estancia-limpieza/${estanciaParaFinalizar}`,
+    {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+  
+    }
+  )
+    .then(res => {
+      if (!res.ok) throw new Error();
+      alert('✅ Estancia finalizada y correo enviado.');
+      cargarDisponibilidad();
+      cargarEstanciasActivas();
+      cargarLimpieza();
+      
     })
-      .then((res) => {
-        if (!res.ok) throw new Error('No se pudo finalizar estancia (Limpieza)');
-        return res.json();
-      })
-      .then(() => {
-        alert('✅ Estancia finalizada y cabina enviada a Limpieza.');
-        cargarDisponibilidad();
-        cargarEstanciasActivas();
-        cargarLimpieza();
-      })
-      .catch((err) => {
-        console.error(err);
-        alert('🚨 Error al finalizar la estancia para Limpieza.');
-      })
-      .finally(() => {
-        cerrarConfirmModal();
-      });
-  };
+    .catch(err => {
+      console.error(err);
+      alert('🚨 Error al finalizar la estancia para Limpieza.');
+    })
+    .finally(() => {
+      cerrarConfirmModal();
+    });
+};
 
   // 2) Enviar a Mantenimiento: llamamos al nuevo endpoint `/api/finalizar-estancia-mantenimiento/:id`
   const confirmarMantenimiento = () => {
@@ -409,25 +414,31 @@ function Home() {
   // FUNCIONES PARA FINALIZAR LIMPIEZA y MANTENIMIENTO DESDE SUS SECCIONES
   // ────────────────────────────────────────────────────────────────────────────
   const handleFinalizarLimpieza = (id_limpieza) => {
-    fetch('http://localhost:5000/api/finalizar-limpieza', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id_limpieza, usuario_id: 1, observaciones: '' }),
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error('No se pudo finalizar limpieza');
-        return res.json();
-      })
-      .then(() => {
-        alert('✅ Limpieza finalizada. Cabina disponible.');
-        cargarDisponibilidad();
-        cargarLimpieza();
-      })
-      .catch((err) => {
-        console.error(err);
-        alert('🚨 Error al finalizar limpieza.');
-      });
-  };
+  // 1) Pedir nombre del limpiador al usuario
+  const limpiador = prompt('¿Cómo te llamas?');
+  if (!limpiador?.trim()) return;  // si no ingresó nada, abortamos
+
+  // 2) Enviar también el campo “limpiador” al backend
+  fetch('http://localhost:5000/api/finalizar-limpieza', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id_limpieza,
+      usuario_id: 1,       // o reemplaza con el ID del usuario autenticado
+      observaciones: '',
+      limpiador,           // ← este es el nuevo campo
+    }),
+  })
+  .then(res => {
+    if (!res.ok) throw new Error();
+    alert('✅ Limpieza finalizada y correo enviado.');
+    cargarDisponibilidad();
+    cargarLimpieza();
+  })
+  .catch(() => {
+    alert('🚨 No se pudo finalizar la limpieza.');
+  });
+};
 
   const handleFinalizarMantenimiento = (id_mantenimiento) => {
     fetch('http://localhost:5000/api/finalizar-mantenimiento', {
