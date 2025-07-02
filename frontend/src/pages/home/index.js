@@ -415,7 +415,7 @@ function Home() {
   // ────────────────────────────────────────────────────────────────────────────
   const handleFinalizarLimpieza = (id_limpieza) => {
   // 1) Pedir nombre del limpiador al usuario
-  const limpiador = prompt('¿Cómo te llamas?');
+  const limpiador = prompt('¿Quién realizó la limpieza?');
   if (!limpiador?.trim()) return;  // si no ingresó nada, abortamos
 
   // 2) Enviar también el campo “limpiador” al backend
